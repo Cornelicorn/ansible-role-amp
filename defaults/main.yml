@@ -1,0 +1,7 @@
+amp_run_quickstart: yes
+amp_admin_user: admin
+amp_admin_password: admin
+amp_listen_port: 8080
+amp_listen_address: 0.0.0.0
+amp_apt_repo: http://repo.cubecoders.com/
+amp_install_srcds: yes

@@ -1,0 +1,59 @@
+---
+  - name: Install pre-install dependencies
+    package:
+      name: gnupg2
+      state: present
+
+  - name: Install srcds dependencies
+    package:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - software-properties-common
+      - dirmngr
+      - apt-transport-https
+      - lib32gcc1
+      - lib32stdc++6
+      - lib32tinfo6
+    when: amp_install_srcds
+
+  - name: Add repo signing key
+    apt_key:
+      url: http://repo.cubecoders.com/archive.key
+      id: 50ED69D7E73CBCF4FB97910C33FB60CD1A773489
+
+  - name: Add repository
+    apt_repository:
+      repo: deb {{ amp_apt_repo }} debian/
+      state: present
+      filename: amp
+
+  - name: Add user for AMP
+    user:
+      name: amp
+      shell: /bin/bash
+      create_home: yes
+      home: /home/amp
+  
+  - name: Install AMP
+    package:
+      name: ampinstmgr
+      state: present
+
+  - name: Check for instances.json
+    stat:
+      path: /home/amp/.ampdata/instances.json
+    register: instances_json
+
+  - name: Run AMP quickstart and saving to /home/amp/quickstart.log
+    become_user: amp
+    become: yes
+    shell: "(cd /home/amp; ampinstmgr quickstart {{ amp_admin_user }} {{ amp_admin_password }} {{ amp_listen_address }} {{ amp_listen_port }} >> quickstart.log  2>&1 &)"
+    async: 10
+    poll: 0
+    when: (not instances_json.stat['exists']) and amp_run_quickstart
+
+  - name: Enable systemd service
+    systemd:
+      name: ampinstmgr
+      enabled: yes
